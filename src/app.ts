@@ -1,5 +1,39 @@
-// Autobind decorator
+interface Validation {
+  value: string | number;
+  required?: boolean;
+  maxLength?: number;
+  minLength?: number;
+  max?: number;
+  min?: number;
+}
 
+function validate(validateInput: Validation) {
+  let isValid = true;
+  if (validateInput.required) {
+    isValid = isValid && validateInput.value.toString().trim().length !== 0;
+  }
+  if (
+    validateInput.minLength != null &&
+    typeof validateInput.value === "string"
+  ) {
+    isValid = isValid && validateInput.value.length >= validateInput.minLength;
+  }
+  if (
+    validateInput.maxLength != null &&
+    typeof validateInput.value === "string"
+  ) {
+    isValid = isValid && validateInput.value.length <= validateInput.maxLength;
+  }
+  if (validateInput.min != null && typeof validateInput.value === "number") {
+    isValid = isValid && validateInput.value >= validateInput.min;
+  }
+  if (validateInput.max != null && typeof validateInput.value === "number") {
+    isValid = isValid && validateInput.value <= validateInput.max;
+  }
+  return isValid;
+}
+
+// Autobind decorator
 function autobind(_: any, _2: String, descriptor: PropertyDescriptor) {
   const originalMethods = descriptor.value;
   const adjDescriptor: PropertyDescriptor = {
@@ -50,11 +84,25 @@ class ProjectInput {
     const enterDescription = this.descriptionInput.value;
     const enterPeople = this.peopleInput.value;
 
+    const validateTitle: Validation = {
+      value: enterTitle,
+      required: true,
+    };
+    const validateDescription: Validation = {
+      value: enterDescription,
+      required: true,
+      minLength: 5,
+    };
+    const validatePeople: Validation = {
+      value: +enterPeople,
+      required: true,
+      min: 1,
+    };
+
     if (
-      enterTitle.trim().length === 0 ||
-      enterDescription.trim().length === 0 ||
-      enterPeople.trim().length === 0 ||
-      +enterPeople <= 0
+      !validate(validateTitle) ||
+      !validate(validateDescription) ||
+      !validate(validatePeople)
     ) {
       alert("Invalid Input, please try again!");
       return;
