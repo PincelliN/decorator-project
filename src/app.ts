@@ -62,6 +62,18 @@ class ProjectState extends State<Project> {
       ProjectStatus.Active
     );
     this.projects.push(newProject);
+    this.updateListeners();
+  }
+
+  moveProject(projectId: string, newStatus: ProjectStatus) {
+    const project = this.projects.find((prj) => prj.id === projectId);
+    if (project && project.status !== newStatus) {
+      project.status = newStatus;
+      this.updateListeners();
+    }
+  }
+
+  private updateListeners() {
     for (const listenerFn of this.listeners) {
       listenerFn(this.projects.slice());
     }
@@ -106,7 +118,7 @@ function validate(validateInput: Validation) {
 }
 
 // Autobind decorator
-function autobind(_: any, _2: String, descriptor: PropertyDescriptor) {
+function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
   const originalMethods = descriptor.value;
   const adjDescriptor: PropertyDescriptor = {
     configurable: true,
@@ -120,7 +132,7 @@ function autobind(_: any, _2: String, descriptor: PropertyDescriptor) {
 
 //Component Base Class
 abstract class Component<T extends HTMLElement, U extends HTMLElement> {
-  templateElemente: HTMLTemplateElement;
+  templateElement: HTMLTemplateElement;
   hostElement: T;
   element: U;
 
@@ -130,13 +142,13 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     insertAtStart: boolean,
     newElementId?: string
   ) {
-    this.templateElemente = document.getElementById(
+    this.templateElement = document.getElementById(
       templateId
     )! as HTMLTemplateElement;
     this.hostElement = document.getElementById(hostElementId)! as T;
 
     const importedNode = document.importNode(
-      this.templateElemente.content,
+      this.templateElement.content,
       true
     );
     this.element = importedNode.firstElementChild as U;
@@ -189,7 +201,7 @@ class ProjectItem
 
   configure() {
     this.element.addEventListener("dragstart", this.dragStartHandler);
-    this.templateElemente.addEventListener("dragend", this.dragEndHandler);
+    this.templateElement.addEventListener("dragend", this.dragEndHandler);
   }
 
   renderContent() {
@@ -215,20 +227,24 @@ class ProjectList
     this.renderContent();
   }
   @autobind
-  dragOverHandler(event: DragEvent): void {
+  dragOverHandler(event: DragEvent) {
     if (event.dataTransfer && event.dataTransfer.types[0] === "text/plain") {
       event.preventDefault();
       const listEl = this.element.querySelector("ul")!;
       listEl.classList.add("droppable");
     }
   }
-
-  dropHandler(event: DragEvent): void {
-    console.log(event.dataTransfer!.getData("text/plain"));
+  @autobind
+  dropHandler(event: DragEvent) {
+    const prjId = event.dataTransfer!.getData("text/plain");
+    projectstate.moveProject(
+      prjId,
+      this.type === "active" ? ProjectStatus.Active : ProjectStatus.Finished
+    );
   }
 
   @autobind
-  dragLeaveHandler(_: DragEvent): void {
+  dragLeaveHandler(_: DragEvent) {
     const listEl = this.element.querySelector("ul")!;
     listEl.classList.remove("droppable");
   }
@@ -342,5 +358,5 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
 }
 
 const formProject = new ProjectInput();
-const acriveProjectList = new ProjectList("active");
+const activeProjectList = new ProjectList("active");
 const finishedProjectList = new ProjectList("finished");
