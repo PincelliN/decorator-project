@@ -1,77 +1,7 @@
 ///<reference path='drag-drop-interface.ts'/>
-
-//Project Type
-
+///<reference path='project-model.ts'/>
+///<reference path='project-state.ts'/>
 namespace App {
-  enum ProjectStatus {
-    Active,
-    Finished,
-  }
-  class Project {
-    constructor(
-      public id: string,
-      public title: string,
-      public description: string,
-      public people: number,
-      public status: ProjectStatus
-    ) {}
-  }
-
-  //Project State Management
-  type Listener<T> = (items: T[]) => void;
-
-  class State<T> {
-    protected listeners: Listener<T>[] = [];
-    addListener(listenerFn: Listener<T>) {
-      this.listeners.push(listenerFn);
-    }
-  }
-
-  class ProjectState extends State<Project> {
-    private projects: Project[] = [];
-    private static instance: ProjectState;
-
-    private constructor() {
-      super();
-    }
-
-    static getInstance() {
-      if (this.instance) {
-        return this.instance;
-      }
-      this.instance = new ProjectState();
-      return this.instance;
-    }
-
-    addProject(title: string, description: string, numOfPeople: number) {
-      const newProject = new Project(
-        Math.random().toString(),
-        title,
-        description,
-        numOfPeople,
-        ProjectStatus.Active
-      );
-      this.projects.push(newProject);
-      this.updateListeners();
-    }
-
-    moveProject(projectId: string, newStatus: ProjectStatus) {
-      const project = this.projects.find((prj) => prj.id === projectId);
-      if (project && project.status !== newStatus) {
-        project.status = newStatus;
-        this.updateListeners();
-      }
-    }
-
-    private updateListeners() {
-      for (const listenerFn of this.listeners) {
-        listenerFn(this.projects.slice());
-      }
-    }
-  }
-
-  const projectstate = ProjectState.getInstance();
-
   interface Validation {
     value: string | number;
     required?: boolean;
@@ -229,7 +159,7 @@ namespace App {
     @autobind
     dropHandler(event: DragEvent) {
       const prjId = event.dataTransfer!.getData("text/plain");
-      projectstate.moveProject(
+      projectState.moveProject(
         prjId,
         this.type === "active" ? ProjectStatus.Active : ProjectStatus.Finished
       );
@@ -246,7 +176,7 @@ namespace App {
       this.element.addEventListener("dragleave", this.dragLeaveHandler);
       this.element.addEventListener("drop", this.dropHandler);
 
-      projectstate.addListener((projects: Project[]) => {
+      projectState.addListener((projects: Project[]) => {
         const relevantProject = projects.filter((prj) => {
           if (this.type === "active") {
             return prj.status === ProjectStatus.Active;
@@ -345,7 +275,7 @@ namespace App {
       const userInput = this.gatherUserInput();
       if (Array.isArray(userInput)) {
         const [title, description, people] = userInput;
-        projectstate.addProject(title, description, people);
+        projectState.addProject(title, description, people);
         this.clearInputs();
       }
     }
